@@ -2,75 +2,74 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="紙タオル ランニングコスト比較（Excel連携）", layout="centered")
+st.set_page_config(page_title="紙タオル ランニングコスト比較", layout="centered")
 
-st.title("🧻 紙タオル ランニングコスト比較アプリ（Excel製品連携版）")
+st.title("🧻 紙タオル ランニングコスト比較アプリ")
 
 st.markdown("""
-このアプリでは、Excelファイルから有効データを抽出し、
-略称ごとに平均使用枚数を元にコスト比較を行います。
+※ 実使用に基づく5日間以上のデータから平均を算出しています。
 
-※ 推定使用枚数と事務所人数の両方が揃ったデータのみ使用
+なお、すべての製品に対して同一条件で比較を行っており、
+信頼性向上のため今後も継続的にデータ取得を進めていきます。
 """)
 
-# ファイルパス：デスクトップ上のファイルをフルパス指定で使用
-excel_path = r"C:\\Users\\bugyou05\\Desktop\\使用量調査.xlsx"
+# GitHub用：相対パスでExcelファイルを参照
+excel_path = "使用量調査.xlsx"
 
 # Excelファイル読み込み
 @st.cache_data
 def load_data():
     if os.path.exists(excel_path):
         df = pd.read_excel(excel_path, engine="openpyxl")
-        source = "デスクトップ上のファイル"
     else:
-        st.error("Excelファイルが見つかりません。デスクトップに '使用量調査.xlsx' を配置してください。")
+        st.error("Excelファイルが見つかりません。'使用量調査.xlsx' をこのアプリと同じフォルダに配置してください。")
         st.stop()
 
-    st.write("📋 読み込み成功。先頭5行を表示します：")
-    st.dataframe(df.head())
-    st.write("📑 読み込んだ列名：", df.columns.tolist())
-
     df_valid = df.dropna(subset=["推定使用枚数", "事務所人数"])
-    st.write("✅ 有効データ件数：", len(df_valid))
+    df_valid = df_valid[df_valid["事務所人数"] > 0]  # 0除算防止
+    df_valid["1人あたり使用枚数"] = df_valid["推定使用枚数"] / df_valid["事務所人数"]
+    usage_by_product = df_valid.groupby("略称")["1人あたり使用枚数"].mean().to_dict()
+    pack_size_by_product = df_valid.groupby("略称")["枚数"].first().to_dict()
+    packs_per_case_by_product = df_valid.groupby("略称")["入数"].first().to_dict()
 
-    st.caption(f"📁 使用データソース：{source}")
-    return df_valid
+    return usage_by_product, pack_size_by_product, packs_per_case_by_product
 
 try:
-    df = load_data()
+    usage_by_product, pack_size_by_product, packs_per_case_by_product = load_data()
 except Exception as e:
     st.error(f"Excelファイルの読み込み中にエラーが発生しました: {e}")
     st.stop()
 
-# 略称ごとの平均使用枚数
-usage_by_product = df.groupby("略称")["推定使用枚数"].mean().to_dict()
-
 # 入力：対象製品選択
 with st.sidebar:
     st.header("📋 比較製品を選択")
-    target_product = st.selectbox("比較対象製品を選んでください", list(usage_by_product.keys()))
+    if not usage_by_product:
+        st.error("使用可能な略称データがありません。")
+        st.stop()
+    product_choices = [key for key in usage_by_product.keys() if key != "新エルナ"]
+    target_product = st.selectbox("比較対象製品を選んでください", product_choices)
     monthly_cases = st.number_input("現在の出荷ケース数（月間）", value=50)
     st.markdown("### 単価入力（200枚あたり）")
-    new_price_per_pack = st.number_input("新エルナ 単価", value=79)
-    target_price_per_pack = st.number_input(f"{target_product} 単価", value=70)
+    new_price_per_pack = st.number_input("新エルナ 単価", value=79.0, step=0.1, format="%.1f")
+    target_price_per_pack = st.number_input(f"{target_product} 単価", value=70.0, step=0.1, format="%.1f")
 
-# 製品情報
+# 製品情報（新エルナも略称から平均使用枚数を取得）
 products = {
     "新エルナ": {
-        "daily_usage": 6.71,
-        "pack_size": 200,
-        "packs_per_case": 35,
+        "daily_usage": usage_by_product.get("新エルナ", 6.71),
+        "pack_size": pack_size_by_product.get("新エルナ", 200),
+        "packs_per_case": packs_per_case_by_product.get("新エルナ", 35),
         "price_per_pack": new_price_per_pack
     },
     target_product: {
         "daily_usage": usage_by_product[target_product],
-        "pack_size": 200,
-        "packs_per_case": 40,
+        "pack_size": pack_size_by_product.get(target_product, 200),
+        "packs_per_case": packs_per_case_by_product.get(target_product, 40),
         "price_per_pack": target_price_per_pack
     }
 }
 
-# 計算処理
+# 計算処理（ケース単価＝単価×入数）
 def calculate_cost(product):
     unit_price = product["price_per_pack"] / product["pack_size"]
     daily_cost = product["daily_usage"] * unit_price
@@ -89,17 +88,31 @@ rate = (diff / target_monthly_cost) * 100
 
 # 結果表示
 st.subheader("📊 1人1日あたりのコスト")
-st.table(pd.DataFrame({
+df_table = pd.DataFrame({
     "製品": ["新エルナ", target_product],
-    "使用枚数": [products["新エルナ"]["daily_usage"], products[target_product]["daily_usage"]],
-    "単価（◯枚）": [new_price_per_pack, target_price_per_pack],
+    "使用枚数": [f"{products['新エルナ']['daily_usage']:.2f}", f"{products[target_product]['daily_usage']:.2f}"],
+    "単価（◯枚）": [f"{new_price_per_pack:.1f}", f"{target_price_per_pack:.1f}"],
     "枚数/パック": [products["新エルナ"]["pack_size"], products[target_product]["pack_size"]],
-    "1人1日コスト (円)": [round(new_daily, 2), round(target_daily, 2)]
-}))
+    "1人1日コスト (円)": [f"{new_daily:.2f}", f"{target_daily:.2f}"]
+})
+
+# 表示スタイル指定（製品：左寄せ、それ以外：中央）
+css_style = """
+<style>
+    table td:nth-child(n+2), table th:nth-child(n+2) {
+        text-align: center !important;
+    }
+    table td:first-child, table th:first-child {
+        text-align: left !important;
+    }
+</style>
+"""
+st.markdown(css_style, unsafe_allow_html=True)
+st.table(df_table)
 
 st.subheader("📦 月間コスト比較")
-st.write(f"{target_product}：{monthly_cases:.2f}ケース × {target_case:.0f}円 = {target_monthly_cost:.0f}円")
-st.write(f"新エルナ：約{new_required_cases:.2f}ケース × {new_case:.0f}円 = {new_monthly_cost:.0f}円")
+st.write(f"{target_product}：{monthly_cases:.2f}ケース × {target_price_per_pack:.0f}円 × {products[target_product]['packs_per_case']}パック = {target_monthly_cost:.0f}円")
+st.write(f"新エルナ：約{new_required_cases:.2f}ケース × {new_price_per_pack:.0f}円 × {products['新エルナ']['packs_per_case']}パック = {new_monthly_cost:.0f}円")
 
 if diff > 0:
     st.success(f"差額：{diff:.0f}円（約{rate:.1f}% 削減の見込み）")
@@ -109,4 +122,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.4.3 - デバッグ情報追加")
+st.caption("ver 4.1 - 入数列に基づくケース単価対応")
