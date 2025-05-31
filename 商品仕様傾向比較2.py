@@ -48,8 +48,8 @@ with st.sidebar:
     target_product = st.selectbox("比較対象製品を選んでください", list(usage_by_product.keys()))
     monthly_cases = st.number_input("現在の出荷ケース数（月間）", value=50)
     st.markdown("### 単価入力（200枚あたり）")
-    new_price_per_pack = st.number_input("新エルナ 単価", value=79.0, format="%.1f")
-    target_price_per_pack = st.number_input(f"{target_product} 単価", value=70.0, format="%.1f")
+    new_price_per_pack = st.number_input("新エルナ 単価", value=79.0, step=0.1, format="%.1f")
+    target_price_per_pack = st.number_input(f"{target_product} 単価", value=70.0, step=0.1, format="%.1f")
 
 # 製品情報（新エルナも略称から平均使用枚数を取得）
 products = {
@@ -67,11 +67,12 @@ products = {
     }
 }
 
-# 計算処理
+# 計算処理（ケース単価＝単価×枚数）
 def calculate_cost(product):
     unit_price = product["price_per_pack"] / product["pack_size"]
     daily_cost = product["daily_usage"] * unit_price
-    case_price = product["price_per_pack"] * product["packs_per_case"]
+    case_price = product["price_per_pack"] * product["packs_per_case"]  # 修正前
+    # case_price = unit_price * product["pack_size"] * product["packs_per_case"]
     return unit_price, daily_cost, case_price
 
 new_unit, new_daily, new_case = calculate_cost(products["新エルナ"])
@@ -120,4 +121,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.9.4 - 使用枚数表示を小数点2位に再修正")
+st.caption("ver 3.9.5 - 単価のステップ幅調整＆ケース単価算出方法確認")
