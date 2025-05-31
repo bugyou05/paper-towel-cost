@@ -95,16 +95,18 @@ df_table = pd.DataFrame({
 })
 
 # 表示スタイル指定（製品：左寄せ、それ以外：中央）
-st.dataframe(
-    df_table.style.set_properties(
-        subset=df_table.columns[1:],
-        **{"text-align": "center"}
-    ).set_properties(
-        subset=["製品"],
-        **{"text-align": "left"}
-    ),
-    height=150
-)
+css_style = """
+<style>
+    table td:nth-child(n+2), table th:nth-child(n+2) {
+        text-align: center !important;
+    }
+    table td:first-child, table th:first-child {
+        text-align: left !important;
+    }
+</style>
+"""
+st.markdown(css_style, unsafe_allow_html=True)
+st.table(df_table)
 
 st.subheader("📦 月間コスト比較")
 st.write(f"{target_product}：{monthly_cases:.2f}ケース × {target_case:.0f}円 = {target_monthly_cost:.0f}円")
@@ -118,4 +120,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.9.0 - 表示スタイル調整（中央寄せ＋左寄せ混合）")
+st.caption("ver 3.9.1 - 表レイアウトをHTML/CSSで制御")
