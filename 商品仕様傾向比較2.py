@@ -30,11 +30,12 @@ def load_data():
     df_valid["1人あたり使用枚数"] = df_valid["推定使用枚数"] / df_valid["事務所人数"]
     usage_by_product = df_valid.groupby("略称")["1人あたり使用枚数"].mean().to_dict()
     pack_size_by_product = df_valid.groupby("略称")["枚数"].first().to_dict()
+    packs_per_case_by_product = df_valid.groupby("略称")["入数"].first().to_dict()
 
-    return usage_by_product, pack_size_by_product
+    return usage_by_product, pack_size_by_product, packs_per_case_by_product
 
 try:
-    usage_by_product, pack_size_by_product = load_data()
+    usage_by_product, pack_size_by_product, packs_per_case_by_product = load_data()
 except Exception as e:
     st.error(f"Excelファイルの読み込み中にエラーが発生しました: {e}")
     st.stop()
@@ -56,13 +57,13 @@ products = {
     "新エルナ": {
         "daily_usage": usage_by_product.get("新エルナ", 6.71),
         "pack_size": pack_size_by_product.get("新エルナ", 200),
-        "packs_per_case": 35,
+        "packs_per_case": packs_per_case_by_product.get("新エルナ", 35),
         "price_per_pack": new_price_per_pack
     },
     target_product: {
         "daily_usage": usage_by_product[target_product],
         "pack_size": pack_size_by_product.get(target_product, 200),
-        "packs_per_case": 40,
+        "packs_per_case": packs_per_case_by_product.get(target_product, 40),
         "price_per_pack": target_price_per_pack
     }
 }
@@ -71,7 +72,7 @@ products = {
 def calculate_cost(product):
     unit_price = product["price_per_pack"] / product["pack_size"]
     daily_cost = product["daily_usage"] * unit_price
-    case_price = product["price_per_pack"] * product["packs_per_case"]  # 修正: 単価×パック数
+    case_price = product["price_per_pack"] * product["packs_per_case"]
     return unit_price, daily_cost, case_price
 
 new_unit, new_daily, new_case = calculate_cost(products["新エルナ"])
@@ -120,4 +121,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 4.0 - ケース単価表示内容修正")
+st.caption("ver 4.1 - 入数列に基づくケース単価対応")
