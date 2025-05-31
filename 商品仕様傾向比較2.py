@@ -88,7 +88,7 @@ rate = (diff / target_monthly_cost) * 100
 st.subheader("📊 1人1日あたりのコスト")
 df_table = pd.DataFrame({
     "製品": ["新エルナ", target_product],
-    "使用枚数": [f"{products['新エルナ']['daily_usage']:.1f}", f"{products[target_product]['daily_usage']:.1f}"],
+    "使用枚数": [f"{products['新エルナ']['daily_usage']:.2f}", f"{products[target_product]['daily_usage']:.2f}"],
     "単価（◯枚）": [f"{new_price_per_pack:.1f}", f"{target_price_per_pack:.1f}"],
     "枚数/パック": [products["新エルナ"]["pack_size"], products[target_product]["pack_size"]],
     "1人1日コスト (円)": [f"{new_daily:.2f}", f"{target_daily:.2f}"]
@@ -120,4 +120,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.9.2 - 新エルナの使用枚数もExcelから取得")
+st.caption("ver 3.9.3 - 使用枚数表示を小数点2位に統一")
