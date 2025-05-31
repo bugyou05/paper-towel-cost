@@ -88,10 +88,10 @@ rate = (diff / target_monthly_cost) * 100
 st.subheader("📊 1人1日あたりのコスト")
 st.table(pd.DataFrame({
     "製品": ["新エルナ", target_product],
-    "使用枚数": [round(products["新エルナ"]["daily_usage"], 1), round(products[target_product]["daily_usage"], 1)],
-    "単価（◯枚）": [round(new_price_per_pack, 1), round(target_price_per_pack, 1)],
+    "使用枚数": [f"{products['新エルナ']['daily_usage']:.1f}", f"{products[target_product]['daily_usage']:.1f}"],
+    "単価（◯枚）": [f"{new_price_per_pack:.1f}", f"{target_price_per_pack:.1f}"],
     "枚数/パック": [products["新エルナ"]["pack_size"], products[target_product]["pack_size"]],
-    "1人1日コスト (円)": [round(new_daily, 2), round(target_daily, 2)]
+    "1人1日コスト (円)": [f"{new_daily:.2f}", f"{target_daily:.2f}"]
 }))
 
 st.subheader("📦 月間コスト比較")
@@ -106,4 +106,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.7.0 - 表示形式調整、枚数列参照")
+st.caption("ver 3.7.1 - 表示形式微調整")
