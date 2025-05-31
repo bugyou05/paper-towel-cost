@@ -51,11 +51,11 @@ with st.sidebar:
     new_price_per_pack = st.number_input("新エルナ 単価", value=79.0, format="%.1f")
     target_price_per_pack = st.number_input(f"{target_product} 単価", value=70.0, format="%.1f")
 
-# 製品情報
+# 製品情報（新エルナも略称から平均使用枚数を取得）
 products = {
     "新エルナ": {
-        "daily_usage": 6.71,
-        "pack_size": 200,
+        "daily_usage": usage_by_product.get("新エルナ", 6.71),
+        "pack_size": pack_size_by_product.get("新エルナ", 200),
         "packs_per_case": 35,
         "price_per_pack": new_price_per_pack
     },
@@ -120,4 +120,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.9.1 - 表レイアウトをHTML/CSSで制御")
+st.caption("ver 3.9.2 - 新エルナの使用枚数もExcelから取得")
