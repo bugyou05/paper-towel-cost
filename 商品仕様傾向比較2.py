@@ -2,12 +2,11 @@ import streamlit as st
 import pandas as pd
 import os
 
-st.set_page_config(page_title="紙タオル ランニングコスト比較（Excel連携）", layout="centered")
+st.set_page_config(page_title="紙タオル ランニングコスト比較", layout="centered")
 
-st.title("🧻 紙タオル ランニングコスト比較アプリ（Excel製品連携版）")
+st.title("🧻 紙タオル ランニングコスト比較アプリ")
 
 st.markdown("""
-
 ※ 実使用に基づく5日間以上のデータから平均を算出しています。
 
 なお、すべての製品に対して同一条件で比較を行っており、
@@ -87,13 +86,25 @@ rate = (diff / target_monthly_cost) * 100
 
 # 結果表示
 st.subheader("📊 1人1日あたりのコスト")
-st.table(pd.DataFrame({
+df_table = pd.DataFrame({
     "製品": ["新エルナ", target_product],
     "使用枚数": [f"{products['新エルナ']['daily_usage']:.1f}", f"{products[target_product]['daily_usage']:.1f}"],
     "単価（◯枚）": [f"{new_price_per_pack:.1f}", f"{target_price_per_pack:.1f}"],
     "枚数/パック": [products["新エルナ"]["pack_size"], products[target_product]["pack_size"]],
     "1人1日コスト (円)": [f"{new_daily:.2f}", f"{target_daily:.2f}"]
-}))
+})
+
+# 表示スタイル指定（製品：左寄せ、それ以外：中央）
+st.dataframe(
+    df_table.style.set_properties(
+        subset=df_table.columns[1:],
+        **{"text-align": "center"}
+    ).set_properties(
+        subset=["製品"],
+        **{"text-align": "left"}
+    ),
+    height=150
+)
 
 st.subheader("📦 月間コスト比較")
 st.write(f"{target_product}：{monthly_cases:.2f}ケース × {target_case:.0f}円 = {target_monthly_cost:.0f}円")
@@ -107,4 +118,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.8.0 - 調査条件文言更新")
+st.caption("ver 3.9.0 - 表示スタイル調整（中央寄せ＋左寄せ混合）")
