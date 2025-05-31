@@ -67,12 +67,11 @@ products = {
     }
 }
 
-# 計算処理（ケース単価＝単価×枚数）
+# 計算処理（ケース単価＝単価×入数）
 def calculate_cost(product):
     unit_price = product["price_per_pack"] / product["pack_size"]
     daily_cost = product["daily_usage"] * unit_price
-    case_price = product["price_per_pack"] * product["packs_per_case"]  # 修正前
-    # case_price = unit_price * product["pack_size"] * product["packs_per_case"]
+    case_price = product["price_per_pack"] * product["packs_per_case"]  # 修正: 単価×パック数
     return unit_price, daily_cost, case_price
 
 new_unit, new_daily, new_case = calculate_cost(products["新エルナ"])
@@ -110,8 +109,8 @@ st.markdown(css_style, unsafe_allow_html=True)
 st.table(df_table)
 
 st.subheader("📦 月間コスト比較")
-st.write(f"{target_product}：{monthly_cases:.2f}ケース × {target_case:.0f}円 = {target_monthly_cost:.0f}円")
-st.write(f"新エルナ：約{new_required_cases:.2f}ケース × {new_case:.0f}円 = {new_monthly_cost:.0f}円")
+st.write(f"{target_product}：{monthly_cases:.2f}ケース × {target_price_per_pack:.0f}円 × {products[target_product]['packs_per_case']}パック = {target_monthly_cost:.0f}円")
+st.write(f"新エルナ：約{new_required_cases:.2f}ケース × {new_price_per_pack:.0f}円 × {products['新エルナ']['packs_per_case']}パック = {new_monthly_cost:.0f}円")
 
 if diff > 0:
     st.success(f"差額：{diff:.0f}円（約{rate:.1f}% 削減の見込み）")
@@ -121,4 +120,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.9.5 - 単価のステップ幅調整＆ケース単価算出方法確認")
+st.caption("ver 4.0 - ケース単価表示内容修正")
