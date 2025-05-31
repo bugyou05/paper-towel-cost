@@ -29,11 +29,12 @@ def load_data():
     df_valid = df_valid[df_valid["事務所人数"] > 0]  # 0除算防止
     df_valid["1人あたり使用枚数"] = df_valid["推定使用枚数"] / df_valid["事務所人数"]
     usage_by_product = df_valid.groupby("略称")["1人あたり使用枚数"].mean().to_dict()
+    pack_size_by_product = df_valid.groupby("略称")["枚数"].first().to_dict()
 
-    return usage_by_product
+    return usage_by_product, pack_size_by_product
 
 try:
-    usage_by_product = load_data()
+    usage_by_product, pack_size_by_product = load_data()
 except Exception as e:
     st.error(f"Excelファイルの読み込み中にエラーが発生しました: {e}")
     st.stop()
@@ -47,8 +48,8 @@ with st.sidebar:
     target_product = st.selectbox("比較対象製品を選んでください", list(usage_by_product.keys()))
     monthly_cases = st.number_input("現在の出荷ケース数（月間）", value=50)
     st.markdown("### 単価入力（200枚あたり）")
-    new_price_per_pack = st.number_input("新エルナ 単価", value=79)
-    target_price_per_pack = st.number_input(f"{target_product} 単価", value=70)
+    new_price_per_pack = st.number_input("新エルナ 単価", value=79.0, format="%.1f")
+    target_price_per_pack = st.number_input(f"{target_product} 単価", value=70.0, format="%.1f")
 
 # 製品情報
 products = {
@@ -60,7 +61,7 @@ products = {
     },
     target_product: {
         "daily_usage": usage_by_product[target_product],
-        "pack_size": 200,
+        "pack_size": pack_size_by_product.get(target_product, 200),
         "packs_per_case": 40,
         "price_per_pack": target_price_per_pack
     }
@@ -87,8 +88,8 @@ rate = (diff / target_monthly_cost) * 100
 st.subheader("📊 1人1日あたりのコスト")
 st.table(pd.DataFrame({
     "製品": ["新エルナ", target_product],
-    "使用枚数": [products["新エルナ"]["daily_usage"], products[target_product]["daily_usage"]],
-    "単価（◯枚）": [new_price_per_pack, target_price_per_pack],
+    "使用枚数": [round(products["新エルナ"]["daily_usage"], 1), round(products[target_product]["daily_usage"], 1)],
+    "単価（◯枚）": [round(new_price_per_pack, 1), round(target_price_per_pack, 1)],
     "枚数/パック": [products["新エルナ"]["pack_size"], products[target_product]["pack_size"]],
     "1人1日コスト (円)": [round(new_daily, 2), round(target_daily, 2)]
 }))
@@ -105,4 +106,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 3.6.2 - GitHub読込対応、ファイルチェック表示削除")
+st.caption("ver 3.7.0 - 表示形式調整、枚数列参照")
