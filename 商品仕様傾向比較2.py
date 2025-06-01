@@ -26,7 +26,7 @@ def load_data():
         st.stop()
 
     df.columns = df.columns.str.strip()  # 列名の空白除去
-    required_columns = ["略称", "推定使用枚数", "事務所人数", "枚数", "入数"]
+    required_columns = ["商品コード", "略称", "推定使用枚数", "事務所人数", "枚数", "入数"]
     missing = [col for col in required_columns if col not in df.columns]
     if missing:
         st.error(f"Excelに必要な列が見つかりません：{', '.join(missing)}")
@@ -39,10 +39,12 @@ def load_data():
     pack_size_by_product = df_valid.groupby("略称")["枚数"].first().to_dict()
     packs_per_case_by_product = df_valid.groupby("略称")["入数"].first().to_dict()
 
-    return usage_by_product, pack_size_by_product, packs_per_case_by_product
+    product_code_map = df_valid.groupby("略称")["商品コード"].first().to_dict()
+
+    return usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map
 
 try:
-    usage_by_product, pack_size_by_product, packs_per_case_by_product = load_data()
+    usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map = load_data()
 except Exception as e:
     st.error(f"Excelファイルの読み込み中にエラーが発生しました: {e}")
     st.stop()
@@ -124,7 +126,8 @@ st.write(f"新エルナ：約{new_required_cases:.2f}ケース × {new_price_per
 if diff > 0:
     st.success(f"差額：{diff:.0f}円（約{rate:.1f}% 削減の見込み）")
     st.markdown("✅ **新エルナはコスト削減につながる可能性があります。**")
-    if target_product == "旧エルナ":
+
+    if product_code_map.get(target_product) == 9962860:
         st.markdown("📝 天候や使用状況による多少の変動はありますが、")
         st.markdown("**傾向として『新エルナは使用枚数が明らかに減っている』ことが確認されています。**")
         st.markdown("📝 使用枚数の削減により、**発注回数や保管スペースの圧縮、交換頻度の低減**なども期待できます。")
@@ -134,4 +137,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 4.2 - 読み込みエラー処理＆列名の安全化対応")
+st.caption("ver 4.3 - 識別を商品コードベースに変更")
