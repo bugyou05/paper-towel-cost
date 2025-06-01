@@ -124,7 +124,10 @@ st.write(f"新エルナ：約{new_required_cases:.2f}ケース × {new_price_per
 if diff > 0:
     st.success(f"差額：{diff:.0f}円（約{rate:.1f}% 削減の見込み）")
     st.markdown("✅ **新エルナはコスト削減につながる可能性があります。**")
-    st.markdown("📝 使用枚数の削減により、発注回数や保管スペースの削減、交換頻度の低減なども期待できます。")
+    if target_product == "旧エルナ":
+        st.markdown("📝 天候や使用状況による多少の変動はありますが、")
+        st.markdown("**傾向として『新エルナは使用枚数が明らかに減っている』ことが確認されています。**")
+    st.markdown("📝 使用枚数の削減により、**発注回数や保管スペースの圧縮、交換頻度の低減**なども期待できます。")
 else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
