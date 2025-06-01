@@ -137,4 +137,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 4.3 - 識別を商品コードベースに変更")
+st.caption("ver 4.4 - case単価修正・比較文言条件追加")
