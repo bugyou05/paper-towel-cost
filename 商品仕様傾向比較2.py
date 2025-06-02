@@ -26,7 +26,7 @@ def load_data():
         st.stop()
 
     df.columns = df.columns.str.strip()  # 列名の空白除去
-    required_columns = ["商品コード", "略称", "推定使用枚数", "事務所人数", "枚数", "入数"]
+    required_columns = ["商品コード", "略称", "推定使用枚数", "事務所人数", "枚数", "入数", "原産国", "商品名"]
     missing = [col for col in required_columns if col not in df.columns]
     if missing:
         st.error(f"Excelに必要な列が見つかりません：{', '.join(missing)}")
@@ -38,13 +38,13 @@ def load_data():
     usage_by_product = df_valid.groupby("略称")["1人あたり使用枚数"].mean().to_dict()
     pack_size_by_product = df_valid.groupby("略称")["枚数"].first().to_dict()
     packs_per_case_by_product = df_valid.groupby("略称")["入数"].first().to_dict()
-
     product_code_map = df_valid.groupby("略称")["商品コード"].first().to_dict()
+    origin_by_product = df_valid.groupby("略称")["原産国"].first().to_dict()
 
-    return usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map
+    return usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map, origin_by_product
 
 try:
-    usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map = load_data()
+    usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map, origin_by_product = load_data()
 except Exception as e:
     st.error(f"Excelファイルの読み込み中にエラーが発生しました: {e}")
     st.stop()
@@ -56,7 +56,11 @@ with st.sidebar:
         st.error("使用可能な略称データがありません。")
         st.stop()
     product_choices = [key for key in usage_by_product.keys() if key != "新エルナ"]
-    target_product = st.selectbox("比較対象製品を選んでください", product_choices)
+    product_choices_display = [f"{p}（{origin_by_product.get(p, '?')}）" for p in product_choices]
+    product_choice_map = dict(zip(product_choices_display, product_choices))
+    selected_display = st.selectbox("比較対象製品を選んでください", product_choices_display)
+    target_product = product_choice_map[selected_display]
+
     monthly_cases = st.number_input("現在の出荷ケース数（月間）", value=50)
     st.markdown("### 単価入力（200枚あたり）")
     new_price_per_pack = st.number_input("新エルナ 単価", value=79.0, step=0.1, format="%.1f")
@@ -98,9 +102,9 @@ rate = (diff / target_monthly_cost) * 100
 # 結果表示
 st.subheader("📊 1人1日あたりのコスト")
 df_table = pd.DataFrame({
-    "製品": ["新エルナ", target_product],
+    "製品": ["新エルナ", f"{target_product}（{origin_by_product.get(target_product, '?')}）"],
     "使用枚数": [f"{products['新エルナ']['daily_usage']:.2f}", f"{products[target_product]['daily_usage']:.2f}"],
-    "単価（◯枚）": [f"{new_price_per_pack:.1f}", f"{target_price_per_pack:.1f}"],
+    "単価（○枚）": [f"{new_price_per_pack:.1f}", f"{target_price_per_pack:.1f}"],
     "枚数/パック": [products["新エルナ"]["pack_size"], products[target_product]["pack_size"]],
     "1人1日コスト (円)": [f"{new_daily:.2f}", f"{target_daily:.2f}"]
 })
@@ -137,4 +141,4 @@ else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
-st.caption("ver 4.4 - case単価修正・比較文言条件追加")
+st.caption("ver 4.5 - 商品名に原産国を追加")
