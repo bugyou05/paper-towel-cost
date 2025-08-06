@@ -52,6 +52,14 @@ except Exception as e:
 # 入力：対象製品選択
 with st.sidebar:
     st.header("📋 比較製品を選択")
+
+  if st.button("🔄 キャッシュをクリアして再読み込み"):
+        st.cache_data.clear()
+        st.success("キャッシュをクリアしました！")
+        st.experimental_rerun()
+
+
+
     if not usage_by_product:
         st.error("使用可能な略称データがありません。")
         st.stop()
