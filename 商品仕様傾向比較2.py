@@ -59,6 +59,7 @@ with st.sidebar:
         st.experimental_rerun()
 
 
+
     if not usage_by_product:
         st.error("使用可能な略称データがありません。")
         st.stop()
@@ -100,9 +101,10 @@ new_unit, new_daily, new_case = calculate_cost(products["新エルナ"])
 target_unit, target_daily, target_case = calculate_cost(products[target_product])
 
 # 月間コスト比較
-new_required_cases = monthly_cases * (products["新エルナ"]["daily_usage"] / products[target_product]["daily_usage"])
-new_monthly_cost = new_required_cases * new_case
-target_monthly_cost = monthly_cases * target_case
+
+new_required_cases = monthly_cases * (products[target_product]["daily_usage"] / products["新エルナ"]["daily_usage"])
+new_monthly_cost = new_required_cases * new_price_per_pack * products["新エルナ"]["packs_per_case"]
+target_monthly_cost = monthly_cases * target_price_per_pack * products[target_product]["packs_per_case"]
 diff = target_monthly_cost - new_monthly_cost
 rate = (diff / target_monthly_cost) * 100
 
@@ -149,4 +151,3 @@ else:
     st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
 st.caption("ver 4.5 - 商品名に原産国を追加")
-
