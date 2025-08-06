@@ -1,87 +1,63 @@
-60
-61
-62
-63
-64
-65
-66
-67
-68
-69
-70
-71
-72
-73
-74
-75
-76
-77
-78
-79
-80
-81
-82
-83
-84
-85
-86
-87
-88
-89
-90
-91
-92
-93
-94
-95
-96
-97
-98
-99
-100
-101
-102
-103
-104
-105
-106
-107
-108
-109
-110
-111
-112
-113
-114
-115
-116
-117
-118
-119
-120
-121
-122
-123
-124
-125
-126
-127
-128
-129
-130
-131
-132
-133
-134
-135
-136
-137
-138
-139
-140
-141
 import streamlit as st
-        st.error("使用可能な略符データがありません。")
+import pandas as pd
+import os
+
+st.set_page_config(page_title="紙タオル ランニングコスト比較", layout="centered")
+
+st.title("🧻 紙タオル ランニングコスト比較アプリ")
+
+st.markdown("""
+※ 実使用に基づく5日間以上のデータから平均を算出しています。
+
+なお、すべての製品に対して同一条件で比較を行っており、
+信頼性向上のため今後も継続的にデータ収集を進めていきます。
+""")
+
+excel_path = "使用量調査.xlsx"
+
+@st.cache_data
+def load_data():
+    if os.path.exists(excel_path):
+        df = pd.read_excel(excel_path, engine="openpyxl")
+    else:
+        st.error("Excelファイルが見つかりません。'使用量調査.xlsx' を同じフォルダに置いてください。")
+        st.stop()
+
+    df.columns = df.columns.str.strip()
+    required_columns = ["商品コード", "略称", "推定使用枚数", "事務所人数", "枚数", "入数", "原産国", "商品名"]
+    missing = [col for col in required_columns if col not in df.columns]
+    if missing:
+        st.error(f"Excelに必要な列が見つかりません：{', '.join(missing)}")
+        st.stop()
+
+    df_valid = df.dropna(subset=["推定使用枚数", "事務所人数"])
+    df_valid = df_valid[df_valid["事務所人数"] > 0]
+    df_valid["1人あたり使用枚数"] = df_valid["推定使用枚数"] / df_valid["事務所人数"]
+
+    usage_by_product = df_valid.groupby("略称")["1人あたり使用枚数"].mean().to_dict()
+    pack_size_by_product = df_valid.groupby("略称")["枚数"].first().to_dict()
+    packs_per_case_by_product = df_valid.groupby("略称")["入数"].first().to_dict()
+    product_code_map = df_valid.groupby("略称")["商品コード"].first().to_dict()
+    origin_by_product = df_valid.groupby("略称")["原産国"].first().to_dict()
+
+    return usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map, origin_by_product
+
+try:
+    usage_by_product, pack_size_by_product, packs_per_case_by_product, product_code_map, origin_by_product = load_data()
+except Exception as e:
+    st.error(f"Excelファイルの読み込み中にエラーが発生しました: {e}")
+    st.stop()
+
+with st.sidebar:
+    st.header("📋 比較製品を選択")
+
+    if st.button("🔄 キャッシュをクリアして再読み込み"):
+        st.cache_data.clear()
+        st.success("キャッシュをクリアしました！")
+        st.experimental_rerun()
+
+    if not usage_by_product:
+        st.error("使用可能な略称データがありません。")
         st.stop()
 
     product_choices = [key for key in usage_by_product.keys() if key != "新エルナ"]
@@ -160,6 +136,6 @@ if diff > 0:
     st.markdown("✅ **新エルナはコスト削減につながる可能性があります。**")
 else:
     st.warning(f"差額：{diff:.0f}円（約{rate:.1f}% 増加）")
-    st.markdown("⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
+    st.markdown(⚠️ **新エルナは削減効果が見られません。使用条件をご確認ください。**")
 
 st.caption("ver 4.6 - 使える回数ベースでケース数を算出する方式に修正")
