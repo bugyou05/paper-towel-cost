@@ -100,15 +100,19 @@ def calculate_cost(product):
 new_unit, new_daily, new_case = calculate_cost(products["新エルナ"])
 target_unit, target_daily, target_case = calculate_cost(products[target_product])
 
-# 月間コスト比較
 
 
-new_required_cases = monthly_cases * (
-    products[target_product]["daily_usage"] / products["新エルナ"]["daily_usage"]
-)
+# 正しい中判必要ケース数（総枚数ベース）
+target_total_sheets_per_case = products[target_product]["pack_size"] * products[target_product]["packs_per_case"]
+new_total_sheets_per_case = products["新エルナ"]["pack_size"] * products["新エルナ"]["packs_per_case"]
 
+required_total_sheets = target_total_sheets_per_case * monthly_cases
+new_required_cases = required_total_sheets / new_total_sheets_per_case
+
+# 月間コスト比較（ケース単価ベース）
 new_monthly_cost = new_required_cases * new_price_per_pack * products["新エルナ"]["packs_per_case"]
 target_monthly_cost = monthly_cases * target_price_per_pack * products[target_product]["packs_per_case"]
+
 diff = target_monthly_cost - new_monthly_cost
 rate = (diff / target_monthly_cost) * 100
 
