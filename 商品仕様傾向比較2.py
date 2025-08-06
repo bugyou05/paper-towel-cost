@@ -102,12 +102,14 @@ target_unit, target_daily, target_case = calculate_cost(products[target_product]
 
 # 月間コスト比較
 
-new_required_cases = monthly_cases * (products[target_product]["daily_usage"] / products["新エルナ"]["daily_usage"])
+new_required_cases = monthly_cases * (
+    products["新エルナ"]["daily_usage"] / products[target_product]["daily_usage"]
+)
+
 new_monthly_cost = new_required_cases * new_price_per_pack * products["新エルナ"]["packs_per_case"]
 target_monthly_cost = monthly_cases * target_price_per_pack * products[target_product]["packs_per_case"]
 diff = target_monthly_cost - new_monthly_cost
 rate = (diff / target_monthly_cost) * 100
-
 # 結果表示
 st.subheader("📊 1人1日あたりのコスト")
 df_table = pd.DataFrame({
